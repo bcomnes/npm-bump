@@ -40,14 +40,22 @@ runs:
       shell: bash
     - run: npm i
       shell: bash
-    - run: npm test
+    - run: |
+        if [ "${{ inputs.skip_test }}" = "true" ]; then
+          echo "Skipping npm test"
+        else
+          npm test
+        fi
       shell: bash
-      if:  ${{ inputs.skip_test }}
     - run: npm version ${{ inputs.newversion }}
       shell: bash
-    - run: git push --follow-tags
+    - run: |
+        if [ "${{ inputs.push_version_commit }}" = "true" ]; then
+          git push --follow-tags
+        else
+          echo "Skipping git push --follow-tags"
+        fi
       shell: bash
-      if:  ${{ inputs.push_version_commit }}
     - run: ${{ inputs.publish_cmd }}
       shell: bash
       env:
