@@ -2,6 +2,10 @@
   "name": "npm-bump",
   "version": "1.0.0",
   "private": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bcomnes/npm-bump.git"
+  },
   "devDependencies": {
     "auto-changelog": "^1.16.2",
     "dependency-check": "^4.1.0",
