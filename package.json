@@ -7,7 +7,7 @@
     "url": "https://github.com/bcomnes/npm-bump.git"
   },
   "devDependencies": {
-    "auto-changelog": "^1.16.2",
+    "auto-changelog": "^2.2.0",
     "dependency-check": "^4.1.0",
     "gh-release": "^3.5.0"
   },
