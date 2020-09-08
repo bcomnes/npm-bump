@@ -1,5 +1,7 @@
 # npm-bump
-[![Actions Status](https://github.com/bcomnes/npm-bump/workflows/tests/badge.svg)](https://github.com/bcomnes/npm-bump/actions)
+[![GitHub tag (latest SemVer)](https://img.shields.io/github/v/tag/bcomnes/npm-bump)](https://github.com/bcomnes/npm-bump)
+[![Actions Status](https://github.com/bcomnes/npm-bump/workflows/release/badge.svg)](https://github.com/bcomnes/deploy-to-neocities/actions)
+[![Marketplace link](https://img.shields.io/badge/github%20marketplace-npm--bump-brightgreen)](https://github.com/marketplace/actions/npm-bump)
 
 `npm i` && `npm test` && `npm version {major,minor,patch}` && `npm publish` as an action.  Full [npm lifecycle](https://docs.npmjs.com/misc/scripts) support and [gh-release](https://ghub.io/gh-release) auth support.  Opinionated and has a few assumptions.
 
