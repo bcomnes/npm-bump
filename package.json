@@ -1,0 +1,15 @@
+{
+  "name": "npm-bump",
+  "version": "0.0.0",
+  "private": true,
+  "devDependencies": {
+    "auto-changelog": "^1.16.2",
+    "dependency-check": "^4.1.0",
+    "gh-release": "^3.5.0"
+  },
+  "license": "MIT",
+  "scripts": {
+    "release": "git push --follow-tags && gh-release -y",
+    "version": "auto-changelog -p --template keepachangelog auto-changelog --breaking-pattern 'BREAKING CHANGE:' && git add CHANGELOG.md"
+  }
+}
