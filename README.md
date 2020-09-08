@@ -38,7 +38,7 @@ jobs:
       uses: bcomnes/npm-bump@v1.0.0
       with:
         git_email: bcomnes@gmail.com
-        git_name: ${{ github.actor }}
+        git_username: ${{ github.actor }}
         newversion: ${{ github.event.inputs.newversion }}
         push_version_commit: true # if your prePublishOnly step pushes git commits, you can omit this input or set it to false.
         github_token: ${{ secrets.GITHUB_TOKEN }} # built in actions token.  Passed tp gh-release if in use.

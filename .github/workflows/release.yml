@@ -28,7 +28,7 @@ jobs:
       uses: bcomnes/npm-bump@master
       with:
         git_email: bcomnes@gmail.com
-        git_name: ${{ github.actor }}
+        git_username: ${{ github.actor }}
         newversion: ${{ github.event.inputs.newversion }}
         skip_test: true # Can't test github actions :(
         publish_cmd: npm run release # dont publish to a registry. set up something else in a different script
