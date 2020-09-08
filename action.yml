@@ -35,13 +35,21 @@ runs:
   using: 'composite'
   steps:
     - run: git config --global user.email "${{ inputs.git_email }}"
+      shell: bash
     - run: git config --global user.name "${{ inputs.git_username }}"
+      shell: bash
     - run: npm i
+      shell: bash
     - run: npm test
+      shell: bash
+      if:  ${{ inputs.skip_test }}
     - run: npm version ${{ inputs.newversion }}
+      shell: bash
     - run: git push --follow-tags
+      shell: bash
       if:  ${{ inputs.push_version_commit }}
     - run: ${{ inputs.publish_cmd }}
+      shell: bash
       env:
         GH_RELEASE_GITHUB_API_TOKEN: ${{ inputs.github_token }}
         NODE_AUTH_TOKEN: ${{ inputs.npm_token }}
