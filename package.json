@@ -1,6 +1,6 @@
 {
   "name": "npm-bump",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "private": true,
   "devDependencies": {
     "auto-changelog": "^1.16.2",
