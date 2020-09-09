@@ -40,6 +40,8 @@ runs:
       shell: bash
     - run: npm i
       shell: bash
+      env:
+        NODE_AUTH_TOKEN: ${{ inputs.npm_token }}
     - run: |
         if [ "${{ inputs.skip_test }}" = "true" ]; then
           echo "Skipping npm test"
