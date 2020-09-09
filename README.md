@@ -87,9 +87,9 @@ The following dependencies and npm lifecycle scripts are recommended for a fully
 - `git_email` (**REQUIRED**): The email address used to create the version commit with.
 - `git_username` (**REQUIRED**): The name to use for the version commit. e.g. github.actor
 - `newversion` (**REQUIRED**): The version bump type to perform (e.g. major, minor, path). See npm version docs for more info.  Pass this as an interactive variable.
-- `push_version_commit`: Run `git push --follow-tags` after running `npm version`.  Enable this if you don't configure a prepublishOnly hook that pushes git commits.
-- `skip_test`: 'Skip npm test step.  Usually a bad idea, but sometimes not.'
-- `publish_cmd`: The command to run after npm version.  Useful if you are just using npm to version a package, but not publish to npm (like an action).
+- `push_version_commit` (Default: `false`): Run `git push --follow-tags` after running `npm version`.  Enable this if you don't configure a prepublishOnly hook that pushes git commits.
+- `skip_test` (Default: `false`): 'Skip npm test step.  Usually a bad idea, but sometimes not.'
+- `publish_cmd` (Default: `npm publish`): The command to run after npm version.  Useful if you are just using npm to version a package, but not publish to npm (like an action).
 - `github_token`: Pass the secrets.GITHUB_TOKEN to enable gh-release capabilities.
 - `npm_token`: An npm token scoped for publishing.  Required in most cases.  Used to create the release.
 
