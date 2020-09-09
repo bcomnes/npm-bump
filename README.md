@@ -107,6 +107,10 @@ You must set the `registry-url` input on the `actions/setup-node` action to 'htt
 
 Yes, just pass `secrets.GITHUB_TOKEN` as the `npm_token` input, and set your registry endpoint to `https://npm.pkg.github.com` in the `actions/setup-node` action.
 
+### Can I consume private Github packages from other repos? 
+
+Yes, but you have to create a new Github machine account, create a Personal Access Token, store it as an action secret, and then use that as the `npm_token`.  Kind of a PITA.
+
 ### Can publish to both npm and github?
 
 No, not right now.  I couldn't think of why this would be a good reason.  Open an issue if you have ideas.
