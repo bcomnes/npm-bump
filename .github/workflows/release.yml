@@ -24,13 +24,13 @@ jobs:
         node-version: ${{ env.node_version }}
         # setting a registry enables the NODE_AUTH_TOKEN env variable where we can set an npm token.  REQUIRED
         registry-url: 'https://registry.npmjs.org'
+    - run: npm i
     - name: Test, version and publush to npm
       uses: bcomnes/npm-bump@master
       with:
         git_email: bcomnes@gmail.com
         git_username: ${{ github.actor }}
         newversion: ${{ github.event.inputs.newversion }}
-        skip_test: true # Can't test github actions :(
         publish_cmd: npm run release # dont publish to a registry. set up something else in a different script
         github_token: ${{ secrets.GITHUB_TOKEN }} # built in actions token.  Passed tp gh-release if in use.
 
