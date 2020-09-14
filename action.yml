@@ -17,10 +17,6 @@ inputs:
     description: 'Run git push --follow-tags after running npm version.  Enable this if you dont configure a prepublishOnly hook that pushes git commits.'
     required: false
     default: false
-  skip_test:
-    description: 'Skip npm test step.  Usually a bad idea, but sometimes not.'
-    required: false
-    default: false
   publish_cmd:
     description: 'The command to run after npm version.  Useful if you are just using npm to version a package, but not publish to npm (like an action).'
     required: false
@@ -38,16 +34,6 @@ runs:
       shell: bash
     - run: git config --global user.name "${{ inputs.git_username }}"
       shell: bash
-    - run: npm i
-      shell: bash
-      env:
-        NODE_AUTH_TOKEN: ${{ inputs.npm_token }}
-    - run: |
-        if [ "${{ inputs.skip_test }}" = "true" ]; then
-          echo "Skipping npm test"
-        else
-          npm test
-        fi
       shell: bash
     - run: npm version ${{ inputs.newversion }}
       shell: bash
