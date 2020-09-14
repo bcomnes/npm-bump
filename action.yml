@@ -34,7 +34,6 @@ runs:
       shell: bash
     - run: git config --global user.name "${{ inputs.git_username }}"
       shell: bash
-      shell: bash
     - run: npm version ${{ inputs.newversion }}
       shell: bash
     - run: |
