@@ -9,7 +9,7 @@
   "devDependencies": {
     "auto-changelog": "^2.2.0",
     "dependency-check": "^4.1.0",
-    "gh-release": "^4.0.0"
+    "gh-release": "^4.0.2"
   },
   "license": "MIT",
   "scripts": {
