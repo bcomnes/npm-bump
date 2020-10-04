@@ -36,6 +36,8 @@ runs:
       shell: bash
     - run: npm version ${{ inputs.newversion }}
       shell: bash
+      env:
+        GH_RELEASE_GITHUB_API_TOKEN: ${{ inputs.github_token }}
     - run: |
         if [ "${{ inputs.push_version_commit }}" = "true" ]; then
           git push --follow-tags
