@@ -20,18 +20,22 @@ on:
         required: true
 
 env:
-  node_version: 14
+  node_version: lts/*
+  
+concurrency: # prevent concurrent releases
+  group: npm-bump
+  cancel-in-progress: true
 
 jobs:
   version_and_release:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2.3.2
+    - uses: actions/checkout@v3
       with:
         # fetch full history so things like auto-changelog work properly
         fetch-depth: 0
     - name: Use Node.js ${{ env.node_version }}
-      uses: actions/setup-node@v2.1.1
+      uses: actions/setup-node@v3
       with:
         node-version: ${{ env.node_version }}
         # setting a registry enables the NODE_AUTH_TOKEN env variable where we can set an npm token.  REQUIRED
