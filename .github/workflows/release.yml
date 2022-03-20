@@ -8,7 +8,11 @@ on:
         required: true
 
 env:
-  node_version: 14
+  node_version: 'lts/*'
+  
+concurrency: # prevent concurrent releases
+  group: npm-bump
+  cancel-in-progress: true
 
 jobs:
   version_and_release:
