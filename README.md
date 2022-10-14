@@ -43,7 +43,7 @@ jobs:
     - run: npm i
     - run: npm test
     - name: Version and publish to npm
-      uses: bcomnes/npm-bump@v2.0.2
+      uses: bcomnes/npm-bump@v2
       with:
         git_email: bcomnes@gmail.com
         git_username: ${{ github.actor }}
@@ -128,22 +128,7 @@ Nope, you can completely override the `npm publish` command with whatever you wa
 
 ### Can you offer a major version tag/branch alias?  I want automatic updates!
 
-Nope!  This was always weird/bad pattern of github actions.  Luckily github offers a solution for this.  Create a `.github/dependabot.yml` with, at a minimum, the following config:
-
-```yaml
-# Basic dependabot.yml file with
-# minimum configuration for two package managers
-
-version: 2
-updates:
-  # Enable version updates for npm
-  # Enable updates to github actions
-  - package-ecosystem: "github-actions"
-    directory: "/"
-    schedule:
-      interval: "daily"
-
-```
+Yes. npm-bump now offers a major version ref you can install with.
 
 ### Why isn't npm-bump running tests anymore?
 
