@@ -29,6 +29,8 @@ concurrency: # prevent concurrent releases
 jobs:
   version_and_release:
     runs-on: ubuntu-latest
+    outputs:
+      tagName: ${{ steps.npm-bump.outputs.release_tag }}
     steps:
     - uses: actions/checkout@v3
       with:
@@ -43,6 +45,7 @@ jobs:
     - run: npm i
     - run: npm test
     - name: Version and publish to npm
+      id: npm-bump
       uses: bcomnes/npm-bump@v2
       with:
         git_email: bcomnes@gmail.com
@@ -51,6 +54,7 @@ jobs:
         push_version_commit: true # if your prePublishOnly step pushes git commits, you can omit this input or set it to false.
         github_token: ${{ secrets.GITHUB_TOKEN }} # built in actions token.  Passed tp gh-release if in use.
         npm_token: ${{ secrets.NPM_TOKEN }} # user set secret token generated at npm
+    - run: echo ${{ steps.npm-bump.outputs.release_tag }}
 ```
 
 This will give you a push-button triggered action that runs `npm version {major,minor,patch}`, `git push --follow-tags` and finally `npm publish`.
@@ -102,7 +106,7 @@ Additionally, you should run your tests in order to block a release that isn't p
 
 ### Outputs
 
-None.
+- `release_tag`: The name of the created git tag as described by git describe --tags
 
 ## FAQ
 

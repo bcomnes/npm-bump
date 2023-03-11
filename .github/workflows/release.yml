@@ -17,6 +17,8 @@ concurrency: # prevent concurrent releases
 jobs:
   version_and_release:
     runs-on: ubuntu-latest
+    outputs:
+      tagName: ${{ steps.npm-bump.outputs.release_tag }}
     steps:
     - uses: actions/checkout@v3
       with:
@@ -31,10 +33,12 @@ jobs:
     - run: npm i
     - name: Test, version and publush to npm
       uses: bcomnes/npm-bump@master
+      id: npm-bump
       with:
         git_email: bcomnes@gmail.com
         git_username: ${{ github.actor }}
         newversion: ${{ github.event.inputs.newversion }}
         publish_cmd: npm run release # dont publish to a registry. set up something else in a different script
         github_token: ${{ secrets.GITHUB_TOKEN }} # built in actions token.  Passed tp gh-release if in use.
+    - run: echo ${{ steps.npm-bump.outputs.release_tag }}
 

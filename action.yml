@@ -28,7 +28,7 @@ inputs:
     description: 'An npm token scoped for publishing.  Used to create the release.'
     required: false
 outputs:
-  releast_tag:
+  release_tag:
     description: "The name of the created git tag as described by git describe --tags"
     value: ${{ steps.release-tag-retreiver.outputs.release-tag }}
 runs:
