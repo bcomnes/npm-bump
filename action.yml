@@ -27,6 +27,10 @@ inputs:
   npm_token:
     description: 'An npm token scoped for publishing.  Used to create the release.'
     required: false
+outputs:
+  releast_tag:
+    description: "The name of the created git tag as described by git describe --tags"
+    value: ${{ steps.release-tag-retreiver.outputs.release-tag }}
 runs:
   using: 'composite'
   steps:
@@ -38,6 +42,9 @@ runs:
       shell: bash
       env:
         GH_RELEASE_GITHUB_API_TOKEN: ${{ inputs.github_token }}
+    - run: echo "release-tag=$(git describe --tags)" >> $GITHUB_OUTPUT
+      id: release-tag-retreiver
+      shell: bash
     - run: |
         if [ "${{ inputs.push_version_commit }}" = "true" ]; then
           git push --follow-tags
