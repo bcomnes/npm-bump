@@ -110,6 +110,16 @@ Additionally, you should run your tests in order to block a release that isn't p
 
 ## FAQ
 
+### I keep getting "Git working directory not clean" errors
+
+Something about your workflow is creating or modifying files before versioning. 
+
+Things to check for:
+
+- Is your package-lock.json (or equivalent) getting modified in preparation to versioning? Considder adding these to your `.gitignore` as lock files provide a less [realistic environment](https://github.com/sindresorhus/ama/issues/479#issuecomment-310661514) to work around in modules.
+- Adding a simple `git status` step prior to the npm bump step might reveal which files are blocking the publish.
+- For files that get modified during the version step, you can stage them along side your release in the `version` lifecycle event. 
+
 ### I'm getting 404/bad auth errors on npm.  Why?
 
 You must set the `registry-url` input on the `actions/setup-node` action to 'https://registry.npmjs.org' at a minimum.  Github actions does some wacky stuff to `.npmrc` like setting up a `NODE_AUTH_TOKEN` input for the npm token.  `npm-bump` takes advantage of this behavior so its an assumed requirement. See [this article](https://docs.github.com/en/actions/language-and-framework-guides/publishing-nodejs-packages) for more info on this bizarre behavior.   Also if you script modifications to a local `.npmrc`, this can mess up the `actions/setup-node` configuration.
