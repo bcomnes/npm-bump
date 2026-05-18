@@ -52,5 +52,5 @@ jobs:
         version_type: ${{ github.event.inputs.version_type }}
         newversion: ${{ github.event.inputs.newversion }}
         publish_cmd: npm run release # dont publish to a registry. set up something else in a different script
-        github_token: ${{ secrets.GITHUB_TOKEN }} # built in actions token.  Passed to gh-release if in use.
+        github_token: ${{ secrets.GITHUB_TOKEN }}
     - run: echo ${{ steps.npm-bump.outputs.release_tag }}

@@ -7,7 +7,7 @@
 
 ## Usage
 
-Generate a publish token on npm then set it as an action secret (`NPM_TOKEN` in this example).
+npm-bump uses [npm trusted publishing](https://github.blog/changelog/2025-07-31-npm-trusted-publishing-with-oidc-is-generally-available/) via OIDC — no npm token needed. Set up a trusted publisher on [npmjs.com](https://npmjs.com) for your package pointing at your repository and workflow file, then use this workflow:
 
 ``` yaml
 name: Version and Release
@@ -34,7 +34,7 @@ env:
 
 permissions:
   contents: write
-  id-token: write  # required for npm provenance
+  id-token: write  # required for OIDC trusted publishing
 
 concurrency: # prevent concurrent releases
   group: npm-bump
@@ -54,7 +54,6 @@ jobs:
       uses: actions/setup-node@v6
       with:
         node-version-file: package.json
-        # setting a registry enables the NODE_AUTH_TOKEN env variable where we can set an npm token.  REQUIRED
         registry-url: 'https://registry.npmjs.org'
     - run: npm i
     - run: npm test
@@ -65,9 +64,7 @@ jobs:
         version_type: ${{ github.event.inputs.version_type }}
         newversion: ${{ github.event.inputs.newversion }}
         push_version_commit: true # if your prePublishOnly step pushes git commits, you can omit this input or set it to false.
-        npm_provenance: true
-        github_token: ${{ secrets.GITHUB_TOKEN }} # built in actions token.  Passed to gh-release if in use.
-        npm_token: ${{ secrets.NPM_TOKEN }} # user set secret token generated at npm
+        github_token: ${{ secrets.GITHUB_TOKEN }}
     - run: echo ${{ steps.npm-bump.outputs.release_tag }}
 ```
 
@@ -116,9 +113,7 @@ Additionally, you should run your tests in order to block a release that isn't p
 - `git_username` (Optional): Name for the version commit. Defaults to `github.actor`.
 - `push_version_commit` (Default: `false`): Run `git push --follow-tags` after `npm version`. Enable if you don't push in a `prepublishOnly` hook.
 - `publish_cmd` (Default: `npm publish`): Command to run after `npm version`. Override to skip registry publishing or run a custom release script.
-- `npm_provenance` (Default: `false`): Pass `--provenance` to `npm publish`. Requires `id-token: write` in the calling workflow's permissions.
 - `github_token`: Pass `secrets.GITHUB_TOKEN` to enable gh-release capabilities.
-- `npm_token`: An npm token scoped for publishing. Required in most cases.
 
 ### Outputs
 
@@ -139,19 +134,17 @@ Things to check for:
 
 ### I'm getting 404/bad auth errors on npm.  Why?
 
-You must set the `registry-url` input on the `actions/setup-node` action to 'https://registry.npmjs.org' at a minimum.  Github actions does some wacky stuff to `.npmrc` like setting up a `NODE_AUTH_TOKEN` input for the npm token.  `npm-bump` takes advantage of this behavior so its an assumed requirement. See [this article](https://docs.github.com/en/actions/language-and-framework-guides/publishing-nodejs-packages) for more info on this bizarre behavior.   Also if you script modifications to a local `.npmrc`, this can mess up the `actions/setup-node` configuration.
+Make sure you have configured a [trusted publisher](https://github.blog/changelog/2025-07-31-npm-trusted-publishing-with-oidc-is-generally-available/) on npmjs.com for your package, and that your workflow has `id-token: write` permission. npm trusted publishing requires npm CLI v11.5.1 or later.
 
-### Can I publish to the github registry?
+You must also set `registry-url: 'https://registry.npmjs.org'` on `actions/setup-node`. If you have local `.npmrc` modifications in your workflow they can interfere with this.
 
-Yes, just pass `secrets.GITHUB_TOKEN` as the `npm_token` input, and set your registry endpoint to `https://npm.pkg.github.com` in the `actions/setup-node` action.
+### Can I publish to the GitHub Packages registry?
 
-### Can I consume private Github packages from other repos?
+Set `registry-url: 'https://npm.pkg.github.com'` on `actions/setup-node` and override `publish_cmd` if needed. GitHub Packages does not support OIDC trusted publishing, so you will need a token-based approach for that registry.
 
-Yes, but you have to create a new Github machine account, create a Personal Access Token, store it as an action secret, and then use that as the `npm_token`.  Kind of a PITA.
+### Can I consume private GitHub packages from other repos?
 
-### Can publish to both npm and github?
-
-No, not right now.  I couldn't think of why this would be a good reason.  Open an issue if you have ideas.
+Yes, but you need a Personal Access Token with `packages:read` stored as an action secret, configured in your `.npmrc`.
 
 ### Do I have to publish to a registry?
 

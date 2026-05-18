@@ -5,10 +5,10 @@ branding:
   color: blue
 inputs:
   git_email:
-    description: 'Email for the version commit. If omitted, git must be pre-configured by the caller.'
+    description: 'Email for the version commit. Defaults to <actor>@users.noreply.github.com.'
     required: false
   git_username:
-    description: 'Name for the version commit. If omitted, git must be pre-configured by the caller.'
+    description: 'Name for the version commit. Defaults to github.actor.'
     required: false
   version_type:
     description: 'Version type dropdown value (major, minor, patch, custom). If provided, takes precedence over newversion unless custom.'
@@ -24,15 +24,8 @@ inputs:
     description: 'Command to run after npm version. Override to skip npm publish or use a custom release script.'
     required: false
     default: 'npm publish'
-  npm_provenance:
-    description: 'Pass --provenance to npm publish. Requires id-token: write permission in the calling workflow.'
-    required: false
-    default: false
   github_token:
     description: 'Pass secrets.GITHUB_TOKEN to enable gh-release capabilities.'
-    required: false
-  npm_token:
-    description: 'An npm token scoped for publishing.'
     required: false
 outputs:
   release_tag:
@@ -89,12 +82,6 @@ runs:
         fi
     - name: publish
       shell: bash
-      run: |
-        if [ "${{ inputs.npm_provenance }}" = "true" ]; then
-          ${{ inputs.publish_cmd }} --provenance
-        else
-          ${{ inputs.publish_cmd }}
-        fi
+      run: ${{ inputs.publish_cmd }}
       env:
         GH_RELEASE_GITHUB_API_TOKEN: ${{ inputs.github_token }}
-        NODE_AUTH_TOKEN: ${{ inputs.npm_token }}
