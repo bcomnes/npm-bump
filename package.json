@@ -7,7 +7,7 @@
     "url": "https://github.com/bcomnes/npm-bump.git"
   },
   "devDependencies": {
-    "releasearoni": "^0.1.14"
+    "releasearoni": "^0.2.0"
   },
   "engines": {
     "node": ">=20"
@@ -15,6 +15,6 @@
   "license": "MIT",
   "scripts": {
     "version": "releasearoni version",
-    "release": "releasearoni --no-npm-check"
+    "release": "releasearoni --no-npm-check --major-branch "
   }
 }
