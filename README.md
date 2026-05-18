@@ -15,7 +15,7 @@ name: Version and Release
 on:
   workflow_dispatch:
     inputs:
-      version_type:
+      version-type:
         description: 'Version type'
         type: choice
         options:
@@ -25,8 +25,8 @@ on:
           - custom
         default: 'patch'
         required: true
-      newversion:
-        description: 'Custom version (only used when version_type is "custom")'
+      new-version:
+        description: 'Custom version (only used when version-type is "custom")'
         required: false
 
 env:
@@ -44,7 +44,7 @@ jobs:
   version_and_release:
     runs-on: ubuntu-latest
     outputs:
-      tagName: ${{ steps.npm-bump.outputs.release_tag }}
+      tagName: ${{ steps.npm-bump.outputs.release-tag }}
     steps:
     - uses: actions/checkout@v6
       with:
@@ -58,13 +58,13 @@ jobs:
     - run: npm test
     - name: Version and publish to npm
       id: npm-bump
-      uses: bcomnes/npm-bump@v2
+      uses: bcomnes/npm-bump@v3
       with:
-        version_type: ${{ github.event.inputs.version_type }}
-        newversion: ${{ github.event.inputs.newversion }}
-        push_version_commit: true # if your prePublishOnly step pushes git commits, you can omit this input or set it to false.
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-    - run: echo ${{ steps.npm-bump.outputs.release_tag }}
+        version-type: ${{ github.event.inputs['version-type'] }}
+        new-version: ${{ github.event.inputs['new-version'] }}
+        push-version-commit: true # if your prePublishOnly step pushes git commits, you can omit this input or set it to false.
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+    - run: echo ${{ steps.npm-bump.outputs['release-tag'] }}
 ```
 
 This will give you a push-button triggered action that runs `npm version {major,minor,patch}`, `git push --follow-tags` and finally `npm publish`.
@@ -79,7 +79,7 @@ It is advisable to set a `prePublishOnly` lifecycle hook that runs, at a minimum
 }
 ```
 
-With that lifecycle set, you can omit the `push_version_commit` input, or set it to false.
+With that lifecycle set, you can omit the `push-version-commit` input, or set it to false.
 
 The following dependencies and npm lifecycle scripts are recommended for a fully automated release process that includes:
 
@@ -104,17 +104,18 @@ Additionally, you should run your tests in order to block a release that isn't p
 
 ### Inputs
 
-- `version_type` (Optional): Dropdown value from `workflow_dispatch` — one of `major`, `minor`, `patch`, `custom`. When provided, the action resolves the version internally. Use `custom` together with `newversion` for an explicit version string.
-- `newversion` (Optional): Explicit version string (e.g. `1.2.3`) or bump type. Required when `version_type` is `custom` or when `version_type` is not set.
-- `git_email` (Optional): Email for the version commit. Defaults to `<actor>@users.noreply.github.com`.
-- `git_username` (Optional): Name for the version commit. Defaults to `github.actor`.
-- `push_version_commit` (Default: `false`): Run `git push --follow-tags` after `npm version`. Enable if you don't push in a `prepublishOnly` hook.
-- `publish_cmd` (Default: `npm publish`): Command to run after `npm version`. Override to skip registry publishing or run a custom release script.
-- `github_token`: Pass `secrets.GITHUB_TOKEN` to enable GitHub release creation via releasearoni.
+- `version-type` (Optional): Dropdown value from `workflow_dispatch` — one of `major`, `minor`, `patch`, `custom`. When provided, the action resolves the version internally. Use `custom` together with `new-version` for an explicit version string.
+- `new-version` (Optional): Explicit version string (e.g. `1.2.3`) or bump type. Required when `version-type` is `custom` or when `version-type` is not set.
+- `git-email` (Optional): Email for the version commit. Defaults to `<actor>@users.noreply.github.com`.
+- `git-username` (Optional): Name for the version commit. Defaults to `github.actor`.
+- `push-version-commit` (Default: `false`): Run `git push --follow-tags` after `npm version`. Enable if you don't push in a `prepublishOnly` hook.
+- `publish-cmd` (Default: `npm publish`): Command to run after `npm version`. Override to skip registry publishing or run a custom release script.
+- `github-token`: Pass `secrets.GITHUB_TOKEN` to enable GitHub release creation via releasearoni.
+- `major-branch` (Default: `false`): After publishing, create or force-reset a floating major version branch (e.g. `v1`, `v2`) to the release commit and force-push it to origin. Enables consumers to pin to a major version ref (`uses: you/action@v3`) and receive updates automatically. Requires `contents: write` permission.
 
 ### Outputs
 
-- `release_tag`: The name of the created git tag as described by git describe --tags
+- `release-tag`: The name of the created git tag as described by git describe --tags
 
 ## FAQ
 
@@ -126,7 +127,6 @@ npm-bump runs `git status --short --branch` automatically before `npm version`, 
 
 Things to check for:
 
-- Is your `package-lock.json` (or equivalent) getting modified before versioning? Consider adding it to `.gitignore` — lock files provide a less [realistic environment](https://github.com/sindresorhus/ama/issues/479#issuecomment-310661514) in published modules.
 - For files that get modified during the version step, you can stage them alongside your release in the `version` lifecycle script.
 
 ### I'm getting 404/bad auth errors on npm.  Why?
@@ -137,7 +137,7 @@ If you have local `.npmrc` modifications in your workflow they can interfere wit
 
 ### Can I publish to the GitHub Packages registry?
 
-Set `registry-url: 'https://npm.pkg.github.com'` on `actions/setup-node` and override `publish_cmd` if needed. GitHub Packages does not support OIDC trusted publishing, so you will need a token-based approach for that registry.
+Set `registry-url: 'https://npm.pkg.github.com'` on `actions/setup-node` and override `publish-cmd` if needed. GitHub Packages does not support OIDC trusted publishing, so you will need a token-based approach for that registry.
 
 ### Can I consume private GitHub packages from other repos?
 
@@ -149,7 +149,20 @@ Nope, you can completely override the `npm publish` command with whatever you wa
 
 ### Can you offer a major version tag/branch alias?  I want automatic updates!
 
-Yes. npm-bump now offers a major version ref you can install with.
+Yes. Set `major-branch: true` and npm-bump will create or force-reset a branch named after the major version (e.g. `v1`, `v2`, `v3`) and force-push it to origin after every release. Consumers can then reference your action as `uses: you/action@v3` and automatically receive all patch and minor updates within that major version.
+
+```yaml
+    - name: Version and publish to npm
+      uses: bcomnes/npm-bump@v3
+      with:
+        version-type: ${{ github.event.inputs['version-type'] }}
+        new-version: ${{ github.event.inputs['new-version'] }}
+        push-version-commit: true
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        major-branch: true
+```
+
+The branch is force-pushed, so no history is retained on it — it is purely a floating pointer to the latest release commit for that major version.
 
 ### Why isn't npm-bump running tests anymore?
 

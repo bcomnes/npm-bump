@@ -4,31 +4,35 @@ branding:
   icon: box
   color: blue
 inputs:
-  git_email:
+  git-email:
     description: 'Email for the version commit. Defaults to <actor>@users.noreply.github.com.'
     required: false
-  git_username:
+  git-username:
     description: 'Name for the version commit. Defaults to github.actor.'
     required: false
-  version_type:
-    description: 'Version type dropdown value (major, minor, patch, custom). If provided, takes precedence over newversion unless custom.'
+  version-type:
+    description: 'Version type dropdown value (major, minor, patch, custom). If provided, takes precedence over new-version unless custom.'
     required: false
-  newversion:
-    description: 'Version bump type or explicit version (e.g. major, minor, patch, 1.2.3). Required when version_type is "custom" or version_type is not set.'
+  new-version:
+    description: 'Version bump type or explicit version (e.g. major, minor, patch, 1.2.3). Required when version-type is "custom" or version-type is not set.'
     required: false
-  push_version_commit:
+  push-version-commit:
     description: 'Run git push --follow-tags after npm version. Enable if you do not push in a prepublishOnly hook.'
     required: false
     default: false
-  publish_cmd:
+  publish-cmd:
     description: 'Command to run after npm version. Override to skip npm publish or use a custom release script.'
     required: false
     default: 'npm publish'
-  github_token:
+  github-token:
     description: 'Pass secrets.GITHUB_TOKEN to enable GitHub release creation via releasearoni.'
     required: false
+  major-branch:
+    description: 'Create or force-reset a major version branch (e.g. v1, v2) to the release commit and force-push it. Required for floating major-version refs in GitHub Actions consumers.'
+    required: false
+    default: false
 outputs:
-  release_tag:
+  release-tag:
     description: "The created git tag as described by git describe --tags"
     value: ${{ steps.release-tag-retreiver.outputs.release-tag }}
 runs:
@@ -37,55 +41,72 @@ runs:
     - name: Configure git author
       shell: bash
       run: |
-        git config --global user.name "${{ inputs.git_username || github.actor }}"
-        git config --global user.email "${{ inputs.git_email || format('{0}@users.noreply.github.com', github.actor) }}"
+        git config --global user.name "${{ inputs['git-username'] || github.actor }}"
+        git config --global user.email "${{ inputs['git-email'] || format('{0}@users.noreply.github.com', github.actor) }}"
     - name: git status
       shell: bash
       run: git status --short --branch
     - name: Resolve release version
-      id: resolve_version
+      id: resolve-version
       shell: bash
       env:
-        VERSION_TYPE: ${{ inputs.version_type }}
-        NEWVERSION: ${{ inputs.newversion }}
+        VERSION_TYPE: ${{ inputs['version-type'] }}
+        NEW_VERSION: ${{ inputs['new-version'] }}
       run: |
         set -euo pipefail
         if [ -n "$VERSION_TYPE" ]; then
           if [ "$VERSION_TYPE" = "custom" ]; then
-            if [ -z "$NEWVERSION" ]; then
-              echo "newversion is required when version_type is custom" >&2
+            if [ -z "$NEW_VERSION" ]; then
+              echo "new-version is required when version-type is custom" >&2
               exit 1
             fi
-            echo "newversion=$NEWVERSION" >> "$GITHUB_OUTPUT"
+            echo "new-version=$NEW_VERSION" >> "$GITHUB_OUTPUT"
           else
-            echo "newversion=$VERSION_TYPE" >> "$GITHUB_OUTPUT"
+            echo "new-version=$VERSION_TYPE" >> "$GITHUB_OUTPUT"
           fi
         else
-          if [ -z "$NEWVERSION" ]; then
-            echo "Either version_type or newversion must be provided" >&2
+          if [ -z "$NEW_VERSION" ]; then
+            echo "Either version-type or new-version must be provided" >&2
             exit 1
           fi
-          echo "newversion=$NEWVERSION" >> "$GITHUB_OUTPUT"
+          echo "new-version=$NEW_VERSION" >> "$GITHUB_OUTPUT"
         fi
     - name: npm version
       shell: bash
       env:
-        NEWVERSION: ${{ steps.resolve_version.outputs.newversion }}
-        GITHUB_TOKEN: ${{ inputs.github_token }}
-      run: npm version "$NEWVERSION"
+        NEW_VERSION: ${{ steps['resolve-version'].outputs['new-version'] }}
+        GITHUB_TOKEN: ${{ inputs['github-token'] }}
+      run: npm version "$NEW_VERSION"
     - run: echo "release-tag=$(git describe --tags)" >> $GITHUB_OUTPUT
       id: release-tag-retreiver
       shell: bash
     - name: git push
       shell: bash
       run: |
-        if [ "${{ inputs.push_version_commit }}" = "true" ]; then
+        if [ "${{ inputs['push-version-commit'] }}" = "true" ]; then
           git push --follow-tags
         else
           echo "Skipping git push --follow-tags"
         fi
     - name: publish
       shell: bash
-      run: ${{ inputs.publish_cmd }}
+      run: ${{ inputs['publish-cmd'] }}
       env:
-        GH_TOKEN: ${{ inputs.github_token }}
+        GH_TOKEN: ${{ inputs['github-token'] }}
+    - name: Update major version branch
+      if: ${{ inputs['major-branch'] == 'true' }}
+      shell: bash
+      run: |
+        set -euo pipefail
+        RELEASE_TAG="${{ steps['release-tag-retreiver'].outputs['release-tag'] }}"
+        # Strip leading v, extract major number, re-prefix
+        MAJOR=$(echo "$RELEASE_TAG" | sed 's/^v//' | cut -d. -f1)
+        if ! echo "$MAJOR" | grep -qE '^[0-9]+$'; then
+          echo "Could not parse major version from tag '$RELEASE_TAG'" >&2
+          exit 1
+        fi
+        MAJOR_BRANCH="v${MAJOR}"
+        COMMIT_SHA=$(git rev-parse HEAD)
+        echo "Pointing '$MAJOR_BRANCH' to $COMMIT_SHA"
+        git branch -f "$MAJOR_BRANCH" "$COMMIT_SHA"
+        git push origin "$MAJOR_BRANCH" --force

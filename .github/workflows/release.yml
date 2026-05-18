@@ -3,7 +3,7 @@ name: npm bump
 on:
   workflow_dispatch:
     inputs:
-      version_type:
+      version-type:
         description: 'Version type'
         type: choice
         options:
@@ -13,8 +13,8 @@ on:
           - custom
         default: 'patch'
         required: true
-      newversion:
-        description: 'Custom version (only used when version_type is "custom")'
+      new-version:
+        description: 'Custom version (only used when version-type is "custom")'
         required: false
 
 env:
@@ -31,7 +31,7 @@ jobs:
   version_and_release:
     runs-on: ubuntu-latest
     outputs:
-      tagName: ${{ steps.npm-bump.outputs.release_tag }}
+      tagName: ${{ steps.npm-bump.outputs.release-tag }}
     steps:
     - uses: actions/checkout@v6
       with:
@@ -46,8 +46,9 @@ jobs:
       uses: bcomnes/npm-bump@master
       id: npm-bump
       with:
-        version_type: ${{ github.event.inputs.version_type }}
-        newversion: ${{ github.event.inputs.newversion }}
-        publish_cmd: npm run release # private package; runs releasearoni-gh to create the GitHub release
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-    - run: echo ${{ steps.npm-bump.outputs.release_tag }}
+        version-type: ${{ github.event.inputs['version-type'] }}
+        new-version: ${{ github.event.inputs['new-version'] }}
+        publish-cmd: npm run release # private package; runs releasearoni-gh to create the GitHub release
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        major-branch: true
+    - run: echo ${{ steps.npm-bump.outputs['release-tag'] }}
