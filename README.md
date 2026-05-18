@@ -3,7 +3,7 @@
 [![npm bump](https://github.com/bcomnes/npm-bump/actions/workflows/release.yml/badge.svg)](https://github.com/bcomnes/npm-bump/actions/workflows/release.yml)
 [![Marketplace link](https://img.shields.io/badge/github%20marketplace-npm--bump-brightgreen)](https://github.com/marketplace/actions/npm-bump)
 
-`npm version {major,minor,patch}` && `npm publish` as an action.  Full [npm lifecycle](https://docs.npmjs.com/misc/scripts) support and [gh-release](https://ghub.io/gh-release) auth support.  Opinionated and has a few assumptions.
+`npm version {major,minor,patch}` && `npm publish` as an action. Full [npm lifecycle](https://docs.npmjs.com/misc/scripts) support with [releasearoni](https://github.com/bcomnes/releasearoni) for GitHub release creation. Opinionated and has a few assumptions.
 
 ## Usage
 
@@ -88,17 +88,15 @@ The following dependencies and npm lifecycle scripts are recommended for a fully
 - github release creation with changelog contents
 - automated action based package publishing
 - parity with a local release process (you can still run npm version && npm publish and get all of the above benefits)
-- See [swyx's](https://dev.to/swyx/semi-automatic-npm-and-github-releases-with-gh-release-and-auto-changelog-4b5a) article for a more in depth description.
 
 ```json
 {
   "devDependencies": {
-    "auto-changelog": "^1.16.2",
-    "gh-release": "^3.5.0"
+    "releasearoni": "^0.1.0"
   },
   "scripts": {
-    "prepublishOnly": "git push --follow-tags && gh-release -y",
-    "version": "auto-changelog -p --template keepachangelog auto-changelog --breaking-pattern 'BREAKING CHANGE:' && git add CHANGELOG.md"
+    "version": "releasearoni version",
+    "prepublishOnly": "releasearoni"
   }
 }
 ```
@@ -113,7 +111,7 @@ Additionally, you should run your tests in order to block a release that isn't p
 - `git_username` (Optional): Name for the version commit. Defaults to `github.actor`.
 - `push_version_commit` (Default: `false`): Run `git push --follow-tags` after `npm version`. Enable if you don't push in a `prepublishOnly` hook.
 - `publish_cmd` (Default: `npm publish`): Command to run after `npm version`. Override to skip registry publishing or run a custom release script.
-- `github_token`: Pass `secrets.GITHUB_TOKEN` to enable gh-release capabilities.
+- `github_token`: Pass `secrets.GITHUB_TOKEN` to enable GitHub release creation via releasearoni.
 
 ### Outputs
 

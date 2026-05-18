@@ -48,6 +48,6 @@ jobs:
       with:
         version_type: ${{ github.event.inputs.version_type }}
         newversion: ${{ github.event.inputs.newversion }}
-        publish_cmd: npm run release # dont publish to a registry. set up something else in a different script
+        publish_cmd: npm run release # private package; runs releasearoni-gh to create the GitHub release
         github_token: ${{ secrets.GITHUB_TOKEN }}
     - run: echo ${{ steps.npm-bump.outputs.release_tag }}

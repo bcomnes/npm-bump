@@ -7,16 +7,15 @@
     "url": "https://github.com/bcomnes/npm-bump.git"
   },
   "devDependencies": {
-    "auto-changelog": "^2.2.0",
     "dependency-check": "^4.1.0",
-    "gh-release": "^7.0.0"
+    "releasearoni": "^0.1.0"
   },
   "engines": {
     "node": ">=20"
   },
   "license": "MIT",
   "scripts": {
-    "release": "git push --follow-tags && gh-release -y",
-    "version": "auto-changelog -p --template keepachangelog auto-changelog --breaking-pattern 'BREAKING CHANGE:' && git add CHANGELOG.md"
+    "version": "releasearoni version",
+    "release": "releasearoni-gh"
   }
 }

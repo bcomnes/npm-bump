@@ -1,5 +1,5 @@
 name: 'npm bump'
-description: 'npm version {major,minor,patch} && npm publish as an action. Full npm lifecycle support and gh-release auth support.'
+description: 'npm version {major,minor,patch} && npm publish as an action. Full npm lifecycle support with releasearoni for GitHub release creation.'
 branding:
   icon: box
   color: blue
@@ -25,7 +25,7 @@ inputs:
     required: false
     default: 'npm publish'
   github_token:
-    description: 'Pass secrets.GITHUB_TOKEN to enable gh-release capabilities.'
+    description: 'Pass secrets.GITHUB_TOKEN to enable GitHub release creation via releasearoni.'
     required: false
 outputs:
   release_tag:
@@ -72,7 +72,6 @@ runs:
       env:
         NEWVERSION: ${{ steps.resolve_version.outputs.newversion }}
         GITHUB_TOKEN: ${{ inputs.github_token }}
-        GH_RELEASE_GITHUB_API_TOKEN: ${{ inputs.github_token }}
       run: npm version "$NEWVERSION"
     - run: echo "release-tag=$(git describe --tags)" >> $GITHUB_OUTPUT
       id: release-tag-retreiver
@@ -90,4 +89,3 @@ runs:
       run: ${{ inputs.publish_cmd }}
       env:
         GH_TOKEN: ${{ inputs.github_token }}
-        GH_RELEASE_GITHUB_API_TOKEN: ${{ inputs.github_token }}
