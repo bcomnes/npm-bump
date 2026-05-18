@@ -7,7 +7,6 @@
     "url": "https://github.com/bcomnes/npm-bump.git"
   },
   "devDependencies": {
-    "dependency-check": "^4.1.0",
     "releasearoni": "^0.1.14"
   },
   "engines": {
