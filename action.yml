@@ -1,5 +1,5 @@
 name: 'npm bump'
-description: 'npm version {major,minor,patch} && npm publish as an action. Full npm lifecycle support with releasearoni for GitHub release creation.'
+description: 'npm version {major,minor,patch} && npm publish as an action with other fun doodads.'
 branding:
   icon: box
   color: blue
