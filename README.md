@@ -53,7 +53,7 @@ jobs:
     - name: Use Node.js
       uses: actions/setup-node@v6
       with:
-        node-version-file: package.json
+        node-version-file: package.json  # requires engines.node in package.json
         registry-url: 'https://registry.npmjs.org'
     - run: npm i
     - run: npm test

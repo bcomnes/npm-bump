@@ -11,6 +11,9 @@
     "dependency-check": "^4.1.0",
     "gh-release": "^7.0.0"
   },
+  "engines": {
+    "node": ">=20"
+  },
   "license": "MIT",
   "scripts": {
     "release": "git push --follow-tags && gh-release -y",

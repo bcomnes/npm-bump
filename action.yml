@@ -45,30 +45,34 @@ runs:
     - name: Resolve release version
       id: resolve_version
       shell: bash
+      env:
+        VERSION_TYPE: ${{ inputs.version_type }}
+        NEWVERSION: ${{ inputs.newversion }}
       run: |
         set -euo pipefail
-        if [ -n "${{ inputs.version_type }}" ]; then
-          if [ "${{ inputs.version_type }}" = "custom" ]; then
-            if [ -z "${{ inputs.newversion }}" ]; then
+        if [ -n "$VERSION_TYPE" ]; then
+          if [ "$VERSION_TYPE" = "custom" ]; then
+            if [ -z "$NEWVERSION" ]; then
               echo "newversion is required when version_type is custom" >&2
               exit 1
             fi
-            echo "newversion=${{ inputs.newversion }}" >> "$GITHUB_OUTPUT"
+            echo "newversion=$NEWVERSION" >> "$GITHUB_OUTPUT"
           else
-            echo "newversion=${{ inputs.version_type }}" >> "$GITHUB_OUTPUT"
+            echo "newversion=$VERSION_TYPE" >> "$GITHUB_OUTPUT"
           fi
         else
-          if [ -z "${{ inputs.newversion }}" ]; then
+          if [ -z "$NEWVERSION" ]; then
             echo "Either version_type or newversion must be provided" >&2
             exit 1
           fi
-          echo "newversion=${{ inputs.newversion }}" >> "$GITHUB_OUTPUT"
+          echo "newversion=$NEWVERSION" >> "$GITHUB_OUTPUT"
         fi
     - name: npm version
-      run: npm version ${{ steps.resolve_version.outputs.newversion }}
       shell: bash
       env:
+        NEWVERSION: ${{ steps.resolve_version.outputs.newversion }}
         GH_RELEASE_GITHUB_API_TOKEN: ${{ inputs.github_token }}
+      run: npm version "$NEWVERSION"
     - run: echo "release-tag=$(git describe --tags)" >> $GITHUB_OUTPUT
       id: release-tag-retreiver
       shell: bash

@@ -22,7 +22,6 @@ env:
 
 permissions:
   contents: write
-  id-token: write
 
 concurrency: # prevent concurrent releases
   group: npm-bump
@@ -42,8 +41,6 @@ jobs:
       uses: actions/setup-node@v6
       with:
         node-version-file: package.json
-        # setting a registry enables the NODE_AUTH_TOKEN env variable where we can set an npm token.  REQUIRED
-        registry-url: 'https://registry.npmjs.org'
     - run: npm i
     - name: Version and release
       uses: bcomnes/npm-bump@master
