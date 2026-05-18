@@ -3,11 +3,11 @@
 [![npm bump](https://github.com/bcomnes/npm-bump/actions/workflows/release.yml/badge.svg)](https://github.com/bcomnes/npm-bump/actions/workflows/release.yml)
 [![Marketplace link](https://img.shields.io/badge/github%20marketplace-npm--bump-brightgreen)](https://github.com/marketplace/actions/npm-bump)
 
-`npm version {major,minor,patch}` && `npm publish` as an action.  Full [npm lifecycle](https://docs.npmjs.com/misc/scripts) support and [gh-release](https://ghub.io/gh-release) auth support.  Opinionated and has a few assumptions.
+`npm version {major,minor,patch}` && `npm publish` as an action. Full [npm lifecycle](https://docs.npmjs.com/misc/scripts) support with [releasearoni](https://github.com/bcomnes/releasearoni) for GitHub release creation. Opinionated and has a few assumptions.
 
 ## Usage
 
-Generate a publish token on npm then set it as an action secret (`NPM_TOKEN` in this example).
+npm-bump uses [npm trusted publishing](https://github.blog/changelog/2025-07-31-npm-trusted-publishing-with-oidc-is-generally-available/) via OIDC — no npm token needed. Set up a trusted publisher on [npmjs.com](https://npmjs.com) for your package pointing at your repository and workflow file, then use this workflow:
 
 ``` yaml
 name: Version and Release
@@ -15,13 +15,27 @@ name: Version and Release
 on:
   workflow_dispatch:
     inputs:
-      newversion:
-        description: 'Semantic Version Bump Type (major minor patch)'
+      version_type:
+        description: 'Version type'
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+          - custom
+        default: 'patch'
         required: true
+      newversion:
+        description: 'Custom version (only used when version_type is "custom")'
+        required: false
 
 env:
-  node_version: lts/*
-  
+  FORCE_COLOR: 3
+
+permissions:
+  contents: write
+  id-token: write  # required for OIDC trusted publishing
+
 concurrency: # prevent concurrent releases
   group: npm-bump
   cancel-in-progress: true
@@ -32,28 +46,24 @@ jobs:
     outputs:
       tagName: ${{ steps.npm-bump.outputs.release_tag }}
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v6
       with:
         # fetch full history so things like auto-changelog work properly
         fetch-depth: 0
-    - name: Use Node.js ${{ env.node_version }}
-      uses: actions/setup-node@v3
+    - name: Use Node.js
+      uses: actions/setup-node@v6
       with:
-        node-version: ${{ env.node_version }}
-        # setting a registry enables the NODE_AUTH_TOKEN env variable where we can set an npm token.  REQUIRED
-        registry-url: 'https://registry.npmjs.org'
+        node-version-file: package.json  # requires engines.node in package.json
     - run: npm i
     - run: npm test
     - name: Version and publish to npm
       id: npm-bump
       uses: bcomnes/npm-bump@v2
       with:
-        git_email: bcomnes@gmail.com
-        git_username: ${{ github.actor }}
+        version_type: ${{ github.event.inputs.version_type }}
         newversion: ${{ github.event.inputs.newversion }}
         push_version_commit: true # if your prePublishOnly step pushes git commits, you can omit this input or set it to false.
-        github_token: ${{ secrets.GITHUB_TOKEN }} # built in actions token.  Passed tp gh-release if in use.
-        npm_token: ${{ secrets.NPM_TOKEN }} # user set secret token generated at npm
+        github_token: ${{ secrets.GITHUB_TOKEN }}
     - run: echo ${{ steps.npm-bump.outputs.release_tag }}
 ```
 
@@ -77,17 +87,15 @@ The following dependencies and npm lifecycle scripts are recommended for a fully
 - github release creation with changelog contents
 - automated action based package publishing
 - parity with a local release process (you can still run npm version && npm publish and get all of the above benefits)
-- See [swyx's](https://dev.to/swyx/semi-automatic-npm-and-github-releases-with-gh-release-and-auto-changelog-4b5a) article for a more in depth description.
 
 ```json
 {
   "devDependencies": {
-    "auto-changelog": "^1.16.2",
-    "gh-release": "^3.5.0"
+    "releasearoni": "^0.1.0"
   },
   "scripts": {
-    "prepublishOnly": "git push --follow-tags && gh-release -y",
-    "version": "auto-changelog -p --template keepachangelog auto-changelog --breaking-pattern 'BREAKING CHANGE:' && git add CHANGELOG.md"
+    "version": "releasearoni version",
+    "prepublishOnly": "releasearoni"
   }
 }
 ```
@@ -96,13 +104,13 @@ Additionally, you should run your tests in order to block a release that isn't p
 
 ### Inputs
 
-- `git_email` (**REQUIRED**): The email address used to create the version commit with.
-- `git_username` (**REQUIRED**): The name to use for the version commit. e.g. github.actor
-- `newversion` (**REQUIRED**): The version bump type to perform (e.g. major, minor, path). See npm version docs for more info.  Pass this as an interactive variable.
-- `push_version_commit` (Default: `false`): Run `git push --follow-tags` after running `npm version`.  Enable this if you don't configure a prepublishOnly hook that pushes git commits.
-- `publish_cmd` (Default: `npm publish`): The command to run after npm version.  Useful if you are just using npm to version a package, but not publish to npm (like an action).
-- `github_token`: Pass the secrets.GITHUB_TOKEN to enable gh-release capabilities.
-- `npm_token`: An npm token scoped for publishing.  Required in most cases.  Used to create the release.
+- `version_type` (Optional): Dropdown value from `workflow_dispatch` — one of `major`, `minor`, `patch`, `custom`. When provided, the action resolves the version internally. Use `custom` together with `newversion` for an explicit version string.
+- `newversion` (Optional): Explicit version string (e.g. `1.2.3`) or bump type. Required when `version_type` is `custom` or when `version_type` is not set.
+- `git_email` (Optional): Email for the version commit. Defaults to `<actor>@users.noreply.github.com`.
+- `git_username` (Optional): Name for the version commit. Defaults to `github.actor`.
+- `push_version_commit` (Default: `false`): Run `git push --follow-tags` after `npm version`. Enable if you don't push in a `prepublishOnly` hook.
+- `publish_cmd` (Default: `npm publish`): Command to run after `npm version`. Override to skip registry publishing or run a custom release script.
+- `github_token`: Pass `secrets.GITHUB_TOKEN` to enable GitHub release creation via releasearoni.
 
 ### Outputs
 
@@ -112,29 +120,28 @@ Additionally, you should run your tests in order to block a release that isn't p
 
 ### I keep getting "Git working directory not clean" errors
 
-Something about your workflow is creating or modifying files before versioning. 
+Something about your workflow is creating or modifying files before versioning.
+
+npm-bump runs `git status --short --branch` automatically before `npm version`, so the step output in your Actions log will show exactly which files are dirty.
 
 Things to check for:
 
-- Is your package-lock.json (or equivalent) getting modified in preparation to versioning? Considder adding these to your `.gitignore` as lock files provide a less [realistic environment](https://github.com/sindresorhus/ama/issues/479#issuecomment-310661514) to work around in modules.
-- Adding a simple `git status` step prior to the npm bump step might reveal which files are blocking the publish.
-- For files that get modified during the version step, you can stage them along side your release in the `version` lifecycle event. 
+- Is your `package-lock.json` (or equivalent) getting modified before versioning? Consider adding it to `.gitignore` — lock files provide a less [realistic environment](https://github.com/sindresorhus/ama/issues/479#issuecomment-310661514) in published modules.
+- For files that get modified during the version step, you can stage them alongside your release in the `version` lifecycle script.
 
 ### I'm getting 404/bad auth errors on npm.  Why?
 
-You must set the `registry-url` input on the `actions/setup-node` action to 'https://registry.npmjs.org' at a minimum.  Github actions does some wacky stuff to `.npmrc` like setting up a `NODE_AUTH_TOKEN` input for the npm token.  `npm-bump` takes advantage of this behavior so its an assumed requirement. See [this article](https://docs.github.com/en/actions/language-and-framework-guides/publishing-nodejs-packages) for more info on this bizarre behavior.   Also if you script modifications to a local `.npmrc`, this can mess up the `actions/setup-node` configuration.
+Make sure you have configured a [trusted publisher](https://github.blog/changelog/2025-07-31-npm-trusted-publishing-with-oidc-is-generally-available/) on npmjs.com for your package, and that your workflow has `id-token: write` permission. npm trusted publishing requires npm CLI v11.5.1 or later.
 
-### Can I publish to the github registry?
+If you have local `.npmrc` modifications in your workflow they can interfere with publishing.
 
-Yes, just pass `secrets.GITHUB_TOKEN` as the `npm_token` input, and set your registry endpoint to `https://npm.pkg.github.com` in the `actions/setup-node` action.
+### Can I publish to the GitHub Packages registry?
 
-### Can I consume private Github packages from other repos?
+Set `registry-url: 'https://npm.pkg.github.com'` on `actions/setup-node` and override `publish_cmd` if needed. GitHub Packages does not support OIDC trusted publishing, so you will need a token-based approach for that registry.
 
-Yes, but you have to create a new Github machine account, create a Personal Access Token, store it as an action secret, and then use that as the `npm_token`.  Kind of a PITA.
+### Can I consume private GitHub packages from other repos?
 
-### Can publish to both npm and github?
-
-No, not right now.  I couldn't think of why this would be a good reason.  Open an issue if you have ideas.
+Yes, but you need a Personal Access Token with `packages:read` stored as an action secret, configured in your `.npmrc`.
 
 ### Do I have to publish to a registry?
 

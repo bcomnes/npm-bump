@@ -3,13 +3,26 @@ name: npm bump
 on:
   workflow_dispatch:
     inputs:
-      newversion:
-        description: 'npm version {major,minor,patch}'
+      version_type:
+        description: 'Version type'
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+          - custom
+        default: 'patch'
         required: true
+      newversion:
+        description: 'Custom version (only used when version_type is "custom")'
+        required: false
 
 env:
-  node_version: 'lts/*'
-  
+  FORCE_COLOR: 3
+
+permissions:
+  contents: write
+
 concurrency: # prevent concurrent releases
   group: npm-bump
   cancel-in-progress: true
@@ -24,21 +37,17 @@ jobs:
       with:
         # fetch full history so things like auto-changelog work properly
         fetch-depth: 0
-    - name: Use Node.js ${{ env.node_version }}
+    - name: Use Node.js
       uses: actions/setup-node@v6
       with:
-        node-version: ${{ env.node_version }}
-        # setting a registry enables the NODE_AUTH_TOKEN env variable where we can set an npm token.  REQUIRED
-        registry-url: 'https://registry.npmjs.org'
+        node-version-file: package.json
     - run: npm i
-    - name: Test, version and publush to npm
+    - name: Version and release
       uses: bcomnes/npm-bump@master
       id: npm-bump
       with:
-        git_email: bcomnes@gmail.com
-        git_username: ${{ github.actor }}
+        version_type: ${{ github.event.inputs.version_type }}
         newversion: ${{ github.event.inputs.newversion }}
-        publish_cmd: npm run release # dont publish to a registry. set up something else in a different script
-        github_token: ${{ secrets.GITHUB_TOKEN }} # built in actions token.  Passed tp gh-release if in use.
+        publish_cmd: npm run release # private package; runs releasearoni-gh to create the GitHub release
+        github_token: ${{ secrets.GITHUB_TOKEN }}
     - run: echo ${{ steps.npm-bump.outputs.release_tag }}
-

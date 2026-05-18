@@ -8,7 +8,7 @@ Changelog, and releasing is autmated with npm scripts.  To create a release:
 - Run `npm version {patch,minor,major}`.
   - This wills update the version number and generate the changelog.
 - Run `npm publish`.
-  - This will push your local git branch and tags to the default remote, perform a [gh-release](https://ghub.io/gh-release), and create an npm publication.
+  - This will push your local git branch and tags to the default remote and create a GitHub release via [releasearoni](https://github.com/bcomnes/releasearoni).
 
 ## Guidelines
 
