@@ -54,7 +54,6 @@ jobs:
       uses: actions/setup-node@v6
       with:
         node-version-file: package.json  # requires engines.node in package.json
-        registry-url: 'https://registry.npmjs.org'
     - run: npm i
     - run: npm test
     - name: Version and publish to npm
@@ -134,7 +133,7 @@ Things to check for:
 
 Make sure you have configured a [trusted publisher](https://github.blog/changelog/2025-07-31-npm-trusted-publishing-with-oidc-is-generally-available/) on npmjs.com for your package, and that your workflow has `id-token: write` permission. npm trusted publishing requires npm CLI v11.5.1 or later.
 
-You must also set `registry-url: 'https://registry.npmjs.org'` on `actions/setup-node`. If you have local `.npmrc` modifications in your workflow they can interfere with this.
+If you have local `.npmrc` modifications in your workflow they can interfere with publishing.
 
 ### Can I publish to the GitHub Packages registry?
 
