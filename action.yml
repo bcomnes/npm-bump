@@ -42,11 +42,10 @@ runs:
   using: 'composite'
   steps:
     - name: Configure git author
-      if: inputs.git_email != '' && inputs.git_username != ''
       shell: bash
       run: |
-        git config --global user.email "${{ inputs.git_email }}"
-        git config --global user.name "${{ inputs.git_username }}"
+        git config --global user.name "${{ inputs.git_username || github.actor }}"
+        git config --global user.email "${{ inputs.git_email || format('{0}@users.noreply.github.com', github.actor) }}"
     - name: git status
       shell: bash
       run: git status --short --branch

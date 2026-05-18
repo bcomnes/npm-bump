@@ -58,10 +58,6 @@ jobs:
         registry-url: 'https://registry.npmjs.org'
     - run: npm i
     - run: npm test
-    - name: Configure git author
-      run: |
-        git config user.name "${{ github.actor }}"
-        git config user.email "${{ github.actor }}@users.noreply.github.com"
     - name: Version and publish to npm
       id: npm-bump
       uses: bcomnes/npm-bump@v2
@@ -116,8 +112,8 @@ Additionally, you should run your tests in order to block a release that isn't p
 
 - `version_type` (Optional): Dropdown value from `workflow_dispatch` — one of `major`, `minor`, `patch`, `custom`. When provided, the action resolves the version internally. Use `custom` together with `newversion` for an explicit version string.
 - `newversion` (Optional): Explicit version string (e.g. `1.2.3`) or bump type. Required when `version_type` is `custom` or when `version_type` is not set.
-- `git_email` (Optional): Email for the version commit. If omitted, configure git in your workflow before calling this action (recommended — see example above).
-- `git_username` (Optional): Name for the version commit. If omitted, configure git in your workflow before calling this action.
+- `git_email` (Optional): Email for the version commit. Defaults to `<actor>@users.noreply.github.com`.
+- `git_username` (Optional): Name for the version commit. Defaults to `github.actor`.
 - `push_version_commit` (Default: `false`): Run `git push --follow-tags` after `npm version`. Enable if you don't push in a `prepublishOnly` hook.
 - `publish_cmd` (Default: `npm publish`): Command to run after `npm version`. Override to skip registry publishing or run a custom release script.
 - `npm_provenance` (Default: `false`): Pass `--provenance` to `npm publish`. Requires `id-token: write` in the calling workflow's permissions.
