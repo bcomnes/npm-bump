@@ -15,13 +15,27 @@ name: Version and Release
 on:
   workflow_dispatch:
     inputs:
-      newversion:
-        description: 'Semantic Version Bump Type (major minor patch)'
+      version_type:
+        description: 'Version type'
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+          - custom
+        default: 'patch'
         required: true
+      newversion:
+        description: 'Custom version (only used when version_type is "custom")'
+        required: false
 
 env:
-  node_version: lts/*
-  
+  FORCE_COLOR: 1
+
+permissions:
+  contents: write
+  id-token: write  # required for npm provenance
+
 concurrency: # prevent concurrent releases
   group: npm-bump
   cancel-in-progress: true
@@ -32,27 +46,43 @@ jobs:
     outputs:
       tagName: ${{ steps.npm-bump.outputs.release_tag }}
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v6
       with:
         # fetch full history so things like auto-changelog work properly
         fetch-depth: 0
-    - name: Use Node.js ${{ env.node_version }}
-      uses: actions/setup-node@v3
+    - name: Use Node.js
+      uses: actions/setup-node@v6
       with:
-        node-version: ${{ env.node_version }}
+        node-version-file: package.json
         # setting a registry enables the NODE_AUTH_TOKEN env variable where we can set an npm token.  REQUIRED
         registry-url: 'https://registry.npmjs.org'
     - run: npm i
     - run: npm test
+    - name: Resolve release version
+      id: resolve_version
+      run: |
+        set -euo pipefail
+        if [ "${{ github.event.inputs.version_type }}" = "custom" ]; then
+          if [ -z "${{ github.event.inputs.newversion }}" ]; then
+            echo "newversion is required when version_type is custom" >&2
+            exit 1
+          fi
+          echo "newversion=${{ github.event.inputs.newversion }}" >> "$GITHUB_OUTPUT"
+        else
+          echo "newversion=${{ github.event.inputs.version_type }}" >> "$GITHUB_OUTPUT"
+        fi
+    - name: Configure git author
+      run: |
+        git config user.name "${{ github.actor }}"
+        git config user.email "${{ github.actor }}@users.noreply.github.com"
     - name: Version and publish to npm
       id: npm-bump
       uses: bcomnes/npm-bump@v2
       with:
-        git_email: bcomnes@gmail.com
-        git_username: ${{ github.actor }}
-        newversion: ${{ github.event.inputs.newversion }}
+        newversion: ${{ steps.resolve_version.outputs.newversion }}
         push_version_commit: true # if your prePublishOnly step pushes git commits, you can omit this input or set it to false.
-        github_token: ${{ secrets.GITHUB_TOKEN }} # built in actions token.  Passed tp gh-release if in use.
+        npm_provenance: true
+        github_token: ${{ secrets.GITHUB_TOKEN }} # built in actions token.  Passed to gh-release if in use.
         npm_token: ${{ secrets.NPM_TOKEN }} # user set secret token generated at npm
     - run: echo ${{ steps.npm-bump.outputs.release_tag }}
 ```
@@ -96,13 +126,14 @@ Additionally, you should run your tests in order to block a release that isn't p
 
 ### Inputs
 
-- `git_email` (**REQUIRED**): The email address used to create the version commit with.
-- `git_username` (**REQUIRED**): The name to use for the version commit. e.g. github.actor
-- `newversion` (**REQUIRED**): The version bump type to perform (e.g. major, minor, path). See npm version docs for more info.  Pass this as an interactive variable.
-- `push_version_commit` (Default: `false`): Run `git push --follow-tags` after running `npm version`.  Enable this if you don't configure a prepublishOnly hook that pushes git commits.
-- `publish_cmd` (Default: `npm publish`): The command to run after npm version.  Useful if you are just using npm to version a package, but not publish to npm (like an action).
-- `github_token`: Pass the secrets.GITHUB_TOKEN to enable gh-release capabilities.
-- `npm_token`: An npm token scoped for publishing.  Required in most cases.  Used to create the release.
+- `newversion` (**REQUIRED**): Version bump type (`major`, `minor`, `patch`) or an explicit version string (e.g. `1.2.3`). Use the `resolve_version` workflow pattern to feed this from a dropdown.
+- `git_email` (Optional): Email for the version commit. If omitted, configure git in your workflow before calling this action (recommended — see example above).
+- `git_username` (Optional): Name for the version commit. If omitted, configure git in your workflow before calling this action.
+- `push_version_commit` (Default: `false`): Run `git push --follow-tags` after `npm version`. Enable if you don't push in a `prepublishOnly` hook.
+- `publish_cmd` (Default: `npm publish`): Command to run after `npm version`. Override to skip registry publishing or run a custom release script.
+- `npm_provenance` (Default: `false`): Pass `--provenance` to `npm publish`. Requires `id-token: write` in the calling workflow's permissions.
+- `github_token`: Pass `secrets.GITHUB_TOKEN` to enable gh-release capabilities.
+- `npm_token`: An npm token scoped for publishing. Required in most cases.
 
 ### Outputs
 
@@ -112,13 +143,14 @@ Additionally, you should run your tests in order to block a release that isn't p
 
 ### I keep getting "Git working directory not clean" errors
 
-Something about your workflow is creating or modifying files before versioning. 
+Something about your workflow is creating or modifying files before versioning.
+
+npm-bump runs `git status --short --branch` automatically before `npm version`, so the step output in your Actions log will show exactly which files are dirty.
 
 Things to check for:
 
-- Is your package-lock.json (or equivalent) getting modified in preparation to versioning? Considder adding these to your `.gitignore` as lock files provide a less [realistic environment](https://github.com/sindresorhus/ama/issues/479#issuecomment-310661514) to work around in modules.
-- Adding a simple `git status` step prior to the npm bump step might reveal which files are blocking the publish.
-- For files that get modified during the version step, you can stage them along side your release in the `version` lifecycle event. 
+- Is your `package-lock.json` (or equivalent) getting modified before versioning? Consider adding it to `.gitignore` — lock files provide a less [realistic environment](https://github.com/sindresorhus/ama/issues/479#issuecomment-310661514) in published modules.
+- For files that get modified during the version step, you can stage them alongside your release in the `version` lifecycle script.
 
 ### I'm getting 404/bad auth errors on npm.  Why?
 
