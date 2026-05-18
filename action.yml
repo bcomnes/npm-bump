@@ -27,10 +27,6 @@ inputs:
   github-token:
     description: 'Pass secrets.GITHUB_TOKEN to enable GitHub release creation via releasearoni.'
     required: false
-  major-branch:
-    description: 'Create or force-reset a major version branch (e.g. v1, v2) to the release commit and force-push it. Required for floating major-version refs in GitHub Actions consumers.'
-    required: false
-    default: false
 outputs:
   release-tag:
     description: "The created git tag as described by git describe --tags"
@@ -93,20 +89,3 @@ runs:
       run: ${{ inputs['publish-cmd'] }}
       env:
         GH_TOKEN: ${{ inputs['github-token'] }}
-    - name: Update major version branch
-      if: ${{ inputs['major-branch'] == 'true' }}
-      shell: bash
-      run: |
-        set -euo pipefail
-        RELEASE_TAG="${{ steps['release-tag-retreiver'].outputs['release-tag'] }}"
-        # Strip leading v, extract major number, re-prefix
-        MAJOR=$(echo "$RELEASE_TAG" | sed 's/^v//' | cut -d. -f1)
-        if ! echo "$MAJOR" | grep -qE '^[0-9]+$'; then
-          echo "Could not parse major version from tag '$RELEASE_TAG'" >&2
-          exit 1
-        fi
-        MAJOR_BRANCH="v${MAJOR}"
-        COMMIT_SHA=$(git rev-parse HEAD)
-        echo "Pointing '$MAJOR_BRANCH' to $COMMIT_SHA"
-        git branch -f "$MAJOR_BRANCH" "$COMMIT_SHA"
-        git push origin "$MAJOR_BRANCH" --force

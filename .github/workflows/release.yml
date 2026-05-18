@@ -50,5 +50,4 @@ jobs:
         new-version: ${{ github.event.inputs['new-version'] }}
         publish-cmd: npm run release # private package; runs releasearoni-gh to create the GitHub release
         github-token: ${{ secrets.GITHUB_TOKEN }}
-        major-branch: true
     - run: echo ${{ steps.npm-bump.outputs['release-tag'] }}

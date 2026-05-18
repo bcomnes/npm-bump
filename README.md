@@ -111,7 +111,6 @@ Additionally, you should run your tests in order to block a release that isn't p
 - `push-version-commit` (Default: `false`): Run `git push --follow-tags` after `npm version`. Enable if you don't push in a `prepublishOnly` hook.
 - `publish-cmd` (Default: `npm publish`): Command to run after `npm version`. Override to skip registry publishing or run a custom release script.
 - `github-token`: Pass `secrets.GITHUB_TOKEN` to enable GitHub release creation via releasearoni.
-- `major-branch` (Default: `false`): After publishing, create or force-reset a floating major version branch (e.g. `v1`, `v2`) to the release commit and force-push it to origin. Enables consumers to pin to a major version ref (`uses: you/action@v3`) and receive updates automatically. Requires `contents: write` permission.
 
 ### Outputs
 
@@ -146,23 +145,6 @@ Yes, but you need a Personal Access Token with `packages:read` stored as an acti
 ### Do I have to publish to a registry?
 
 Nope, you can completely override the `npm publish` command with whatever you want (e.g. `npm run release` which can run whatever you want related to a release.)  This enables you to publish to things like the Github marketplace, create github releases etc.
-
-### Can you offer a major version tag/branch alias?  I want automatic updates!
-
-Yes. Set `major-branch: true` and npm-bump will create or force-reset a branch named after the major version (e.g. `v1`, `v2`, `v3`) and force-push it to origin after every release. Consumers can then reference your action as `uses: you/action@v3` and automatically receive all patch and minor updates within that major version.
-
-```yaml
-    - name: Version and publish to npm
-      uses: bcomnes/npm-bump@v3
-      with:
-        version-type: ${{ github.event.inputs['version-type'] }}
-        new-version: ${{ github.event.inputs['new-version'] }}
-        push-version-commit: true
-        github-token: ${{ secrets.GITHUB_TOKEN }}
-        major-branch: true
-```
-
-The branch is force-pushed, so no history is retained on it — it is purely a floating pointer to the latest release commit for that major version.
 
 ### Why isn't npm-bump running tests anymore?
 
