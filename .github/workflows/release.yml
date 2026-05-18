@@ -45,30 +45,16 @@ jobs:
         # setting a registry enables the NODE_AUTH_TOKEN env variable where we can set an npm token.  REQUIRED
         registry-url: 'https://registry.npmjs.org'
     - run: npm i
-    - name: Resolve release version
-      id: resolve_version
-      run: |
-        set -euo pipefail
-        if [ "${{ github.event.inputs.version_type }}" = "custom" ]; then
-          if [ -z "${{ github.event.inputs.newversion }}" ]; then
-            echo "newversion is required when version_type is custom" >&2
-            exit 1
-          fi
-          echo "newversion=${{ github.event.inputs.newversion }}" >> "$GITHUB_OUTPUT"
-        else
-          echo "newversion=${{ github.event.inputs.version_type }}" >> "$GITHUB_OUTPUT"
-        fi
     - name: Configure git author
       run: |
         git config user.name "${{ github.actor }}"
         git config user.email "${{ github.actor }}@users.noreply.github.com"
-    - name: git status
-      run: git status --short --branch
     - name: Version and release
       uses: bcomnes/npm-bump@master
       id: npm-bump
       with:
-        newversion: ${{ steps.resolve_version.outputs.newversion }}
+        version_type: ${{ github.event.inputs.version_type }}
+        newversion: ${{ github.event.inputs.newversion }}
         publish_cmd: npm run release # dont publish to a registry. set up something else in a different script
         github_token: ${{ secrets.GITHUB_TOKEN }} # built in actions token.  Passed to gh-release if in use.
     - run: echo ${{ steps.npm-bump.outputs.release_tag }}

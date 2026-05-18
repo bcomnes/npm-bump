@@ -10,9 +10,12 @@ inputs:
   git_username:
     description: 'Name for the version commit. If omitted, git must be pre-configured by the caller.'
     required: false
+  version_type:
+    description: 'Version type dropdown value (major, minor, patch, custom). If provided, takes precedence over newversion unless custom.'
+    required: false
   newversion:
-    description: 'Version bump type or explicit version (e.g. major, minor, patch, 1.2.3). See npm version docs.'
-    required: true
+    description: 'Version bump type or explicit version (e.g. major, minor, patch, 1.2.3). Required when version_type is "custom" or version_type is not set.'
+    required: false
   push_version_commit:
     description: 'Run git push --follow-tags after npm version. Enable if you do not push in a prepublishOnly hook.'
     required: false
@@ -47,8 +50,30 @@ runs:
     - name: git status
       shell: bash
       run: git status --short --branch
+    - name: Resolve release version
+      id: resolve_version
+      shell: bash
+      run: |
+        set -euo pipefail
+        if [ -n "${{ inputs.version_type }}" ]; then
+          if [ "${{ inputs.version_type }}" = "custom" ]; then
+            if [ -z "${{ inputs.newversion }}" ]; then
+              echo "newversion is required when version_type is custom" >&2
+              exit 1
+            fi
+            echo "newversion=${{ inputs.newversion }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "newversion=${{ inputs.version_type }}" >> "$GITHUB_OUTPUT"
+          fi
+        else
+          if [ -z "${{ inputs.newversion }}" ]; then
+            echo "Either version_type or newversion must be provided" >&2
+            exit 1
+          fi
+          echo "newversion=${{ inputs.newversion }}" >> "$GITHUB_OUTPUT"
+        fi
     - name: npm version
-      run: npm version ${{ inputs.newversion }}
+      run: npm version ${{ steps.resolve_version.outputs.newversion }}
       shell: bash
       env:
         GH_RELEASE_GITHUB_API_TOKEN: ${{ inputs.github_token }}

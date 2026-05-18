@@ -58,19 +58,6 @@ jobs:
         registry-url: 'https://registry.npmjs.org'
     - run: npm i
     - run: npm test
-    - name: Resolve release version
-      id: resolve_version
-      run: |
-        set -euo pipefail
-        if [ "${{ github.event.inputs.version_type }}" = "custom" ]; then
-          if [ -z "${{ github.event.inputs.newversion }}" ]; then
-            echo "newversion is required when version_type is custom" >&2
-            exit 1
-          fi
-          echo "newversion=${{ github.event.inputs.newversion }}" >> "$GITHUB_OUTPUT"
-        else
-          echo "newversion=${{ github.event.inputs.version_type }}" >> "$GITHUB_OUTPUT"
-        fi
     - name: Configure git author
       run: |
         git config user.name "${{ github.actor }}"
@@ -79,7 +66,8 @@ jobs:
       id: npm-bump
       uses: bcomnes/npm-bump@v2
       with:
-        newversion: ${{ steps.resolve_version.outputs.newversion }}
+        version_type: ${{ github.event.inputs.version_type }}
+        newversion: ${{ github.event.inputs.newversion }}
         push_version_commit: true # if your prePublishOnly step pushes git commits, you can omit this input or set it to false.
         npm_provenance: true
         github_token: ${{ secrets.GITHUB_TOKEN }} # built in actions token.  Passed to gh-release if in use.
@@ -126,7 +114,8 @@ Additionally, you should run your tests in order to block a release that isn't p
 
 ### Inputs
 
-- `newversion` (**REQUIRED**): Version bump type (`major`, `minor`, `patch`) or an explicit version string (e.g. `1.2.3`). Use the `resolve_version` workflow pattern to feed this from a dropdown.
+- `version_type` (Optional): Dropdown value from `workflow_dispatch` — one of `major`, `minor`, `patch`, `custom`. When provided, the action resolves the version internally. Use `custom` together with `newversion` for an explicit version string.
+- `newversion` (Optional): Explicit version string (e.g. `1.2.3`) or bump type. Required when `version_type` is `custom` or when `version_type` is not set.
 - `git_email` (Optional): Email for the version commit. If omitted, configure git in your workflow before calling this action (recommended — see example above).
 - `git_username` (Optional): Name for the version commit. If omitted, configure git in your workflow before calling this action.
 - `push_version_commit` (Default: `false`): Run `git push --follow-tags` after `npm version`. Enable if you don't push in a `prepublishOnly` hook.
