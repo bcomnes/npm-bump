@@ -33,7 +33,7 @@ jobs:
     outputs:
       tagName: ${{ steps.npm-bump.outputs.release-tag }}
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
       with:
         # fetch full history so things like auto-changelog work properly
         fetch-depth: 0
